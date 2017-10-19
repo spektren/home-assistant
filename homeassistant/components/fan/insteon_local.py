@@ -137,7 +137,7 @@ class InsteonLocalFanDevice(FanEntity):
 
     @property
     def name(self):
-        """Return the name of the node."""
+        """Return the the name of the node."""
         return self.node.deviceName
 
     @property

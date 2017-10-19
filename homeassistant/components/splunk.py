@@ -14,7 +14,6 @@ from homeassistant.const import (
     CONF_NAME, CONF_HOST, CONF_PORT, CONF_SSL, CONF_TOKEN, EVENT_STATE_CHANGED)
 from homeassistant.helpers import state as state_helper
 import homeassistant.helpers.config_validation as cv
-from homeassistant.remote import JSONEncoder
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,8 +81,7 @@ def setup(hass, config):
                 "host": event_collector,
                 "event": json_body,
             }
-            requests.post(event_collector,
-                          data=json.dumps(payload, cls=JSONEncoder),
+            requests.post(event_collector, data=json.dumps(payload),
                           headers=headers, timeout=10)
         except requests.exceptions.RequestException as error:
             _LOGGER.exception("Error saving event to Splunk: %s", error)

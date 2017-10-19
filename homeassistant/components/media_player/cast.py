@@ -287,7 +287,7 @@ class CastDevice(MediaPlayerDevice):
         self.cast.set_volume(volume)
 
     def media_play(self):
-        """Send play command."""
+        """Send play commmand."""
         self.cast.media_controller.play()
 
     def media_pause(self):

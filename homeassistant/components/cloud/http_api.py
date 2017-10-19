@@ -10,7 +10,7 @@ from homeassistant.components.http import (
     HomeAssistantView, RequestDataValidator)
 
 from . import auth_api
-from .const import DOMAIN, REQUEST_TIMEOUT
+from .const import REQUEST_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,14 +74,13 @@ class CloudLoginView(HomeAssistantView):
     def post(self, request, data):
         """Handle login request."""
         hass = request.app['hass']
-        cloud = hass.data[DOMAIN]
+        auth = hass.data['cloud']['auth']
 
         with async_timeout.timeout(REQUEST_TIMEOUT, loop=hass.loop):
-            yield from hass.async_add_job(auth_api.login, cloud, data['email'],
+            yield from hass.async_add_job(auth.login, data['email'],
                                           data['password'])
-            hass.async_add_job(cloud.iot.connect)
 
-        return self.json(_account_data(cloud))
+        return self.json(_auth_data(auth))
 
 
 class CloudLogoutView(HomeAssistantView):
@@ -95,10 +94,10 @@ class CloudLogoutView(HomeAssistantView):
     def post(self, request):
         """Handle logout request."""
         hass = request.app['hass']
-        cloud = hass.data[DOMAIN]
+        auth = hass.data['cloud']['auth']
 
         with async_timeout.timeout(REQUEST_TIMEOUT, loop=hass.loop):
-            yield from cloud.logout()
+            yield from hass.async_add_job(auth.logout)
 
         return self.json_message('ok')
 
@@ -113,12 +112,12 @@ class CloudAccountView(HomeAssistantView):
     def get(self, request):
         """Get account info."""
         hass = request.app['hass']
-        cloud = hass.data[DOMAIN]
+        auth = hass.data['cloud']['auth']
 
-        if not cloud.is_logged_in:
+        if not auth.is_logged_in:
             return self.json_message('Not logged in', 400)
 
-        return self.json(_account_data(cloud))
+        return self.json(_auth_data(auth))
 
 
 class CloudRegisterView(HomeAssistantView):
@@ -136,11 +135,10 @@ class CloudRegisterView(HomeAssistantView):
     def post(self, request, data):
         """Handle registration request."""
         hass = request.app['hass']
-        cloud = hass.data[DOMAIN]
 
         with async_timeout.timeout(REQUEST_TIMEOUT, loop=hass.loop):
             yield from hass.async_add_job(
-                auth_api.register, cloud, data['email'], data['password'])
+                auth_api.register, hass, data['email'], data['password'])
 
         return self.json_message('ok')
 
@@ -160,11 +158,10 @@ class CloudConfirmRegisterView(HomeAssistantView):
     def post(self, request, data):
         """Handle registration confirmation request."""
         hass = request.app['hass']
-        cloud = hass.data[DOMAIN]
 
         with async_timeout.timeout(REQUEST_TIMEOUT, loop=hass.loop):
             yield from hass.async_add_job(
-                auth_api.confirm_register, cloud, data['confirmation_code'],
+                auth_api.confirm_register, hass, data['confirmation_code'],
                 data['email'])
 
         return self.json_message('ok')
@@ -184,11 +181,10 @@ class CloudForgotPasswordView(HomeAssistantView):
     def post(self, request, data):
         """Handle forgot password request."""
         hass = request.app['hass']
-        cloud = hass.data[DOMAIN]
 
         with async_timeout.timeout(REQUEST_TIMEOUT, loop=hass.loop):
             yield from hass.async_add_job(
-                auth_api.forgot_password, cloud, data['email'])
+                auth_api.forgot_password, hass, data['email'])
 
         return self.json_message('ok')
 
@@ -209,19 +205,18 @@ class CloudConfirmForgotPasswordView(HomeAssistantView):
     def post(self, request, data):
         """Handle forgot password confirm request."""
         hass = request.app['hass']
-        cloud = hass.data[DOMAIN]
 
         with async_timeout.timeout(REQUEST_TIMEOUT, loop=hass.loop):
             yield from hass.async_add_job(
-                auth_api.confirm_forgot_password, cloud,
+                auth_api.confirm_forgot_password, hass,
                 data['confirmation_code'], data['email'],
                 data['new_password'])
 
         return self.json_message('ok')
 
 
-def _account_data(cloud):
+def _auth_data(auth):
     """Generate the auth data JSON response."""
     return {
-        'email': cloud.email
+        'email': auth.account.email
     }

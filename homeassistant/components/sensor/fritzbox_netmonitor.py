@@ -17,7 +17,7 @@ from homeassistant.util import Throttle
 
 from requests.exceptions import RequestException
 
-REQUIREMENTS = ['fritzconnection==0.6.5']
+REQUIREMENTS = ['fritzconnection==0.6.3']
 
 _LOGGER = logging.getLogger(__name__)
 

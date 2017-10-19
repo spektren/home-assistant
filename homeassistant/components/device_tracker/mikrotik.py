@@ -14,7 +14,7 @@ from homeassistant.components.device_tracker import (
 from homeassistant.const import (
     CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_PORT)
 
-REQUIREMENTS = ['librouteros==1.0.4']
+REQUIREMENTS = ['librouteros==1.0.2']
 
 MTK_DEFAULT_API_PORT = '8728'
 
@@ -83,15 +83,6 @@ class MikrotikScanner(DeviceScanner):
                              routerboard_info[0].get('model', 'Router'),
                              self.host)
                 self.connected = True
-                self.capsman_exist = self.client(
-                    cmd='/capsman/interface/getall'
-                )
-                if not self.capsman_exist:
-                    _LOGGER.info(
-                        'Mikrotik %s: Not a CAPSman controller. Trying '
-                        'local interfaces ',
-                        self.host
-                    )
                 self.wireless_exist = self.client(
                     cmd='/interface/wireless/getall'
                 )
@@ -120,9 +111,7 @@ class MikrotikScanner(DeviceScanner):
 
     def _update_info(self):
         """Retrieve latest information from the Mikrotik box."""
-        if self.capsman_exist:
-            devices_tracker = 'capsman'
-        elif self.wireless_exist:
+        if self.wireless_exist:
             devices_tracker = 'wireless'
         else:
             devices_tracker = 'ip'
@@ -134,11 +123,7 @@ class MikrotikScanner(DeviceScanner):
         )
 
         device_names = self.client(cmd='/ip/dhcp-server/lease/getall')
-        if devices_tracker == 'capsman':
-            devices = self.client(
-                cmd='/caps-man/registration-table/getall'
-            )
-        elif devices_tracker == 'wireless':
+        if self.wireless_exist:
             devices = self.client(
                 cmd='/interface/wireless/registration-table/getall'
             )
