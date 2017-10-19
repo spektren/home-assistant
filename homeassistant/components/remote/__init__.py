@@ -148,7 +148,6 @@ def async_setup(hass, config):
         num_repeats = service.data.get(ATTR_NUM_REPEATS)
         delay_secs = service.data.get(ATTR_DELAY_SECS)
 
-        update_tasks = []
         for remote in target_remotes:
             if service.service == SERVICE_TURN_ON:
                 yield from remote.async_turn_on(activity=activity_id)
@@ -161,9 +160,17 @@ def async_setup(hass, config):
             else:
                 yield from remote.async_turn_off(activity=activity_id)
 
+        update_tasks = []
+        for remote in target_remotes:
             if not remote.should_poll:
                 continue
-            update_tasks.append(remote.async_update_ha_state(True))
+
+            update_coro = hass.async_add_job(
+                remote.async_update_ha_state(True))
+            if hasattr(remote, 'async_update'):
+                update_tasks.append(update_coro)
+            else:
+                yield from update_coro
 
         if update_tasks:
             yield from asyncio.wait(update_tasks, loop=hass.loop)

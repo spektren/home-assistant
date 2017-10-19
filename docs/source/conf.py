@@ -117,11 +117,7 @@ def linkcode_resolve(domain, info):
         linespec = "#L%d" % (lineno + 1)
     else:
         linespec = ""
-    index = fn.find("/homeassistant/")
-    if index == -1:
-        index = 0
-
-    fn = fn[index:]
+    fn = relpath(fn, start='../')
 
     return '{}/blob/{}/{}{}'.format(GITHUB_URL, code_branch, fn, linespec)
 

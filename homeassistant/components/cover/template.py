@@ -24,6 +24,7 @@ from homeassistant.exceptions import TemplateError
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.restore_state import async_get_last_state
 from homeassistant.helpers.script import Script
 
 _LOGGER = logging.getLogger(__name__)
@@ -133,7 +134,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         _LOGGER.error("No covers added")
         return False
 
-    async_add_devices(covers)
+    async_add_devices(covers, True)
     return True
 
 
@@ -189,6 +190,10 @@ class CoverTemplate(CoverDevice):
     @asyncio.coroutine
     def async_added_to_hass(self):
         """Register callbacks."""
+        state = yield from async_get_last_state(self.hass, self.entity_id)
+        if state:
+            self._position = 100 if state.state == STATE_OPEN else 0
+
         @callback
         def template_cover_state_listener(entity, old_state, new_state):
             """Handle target device state changes."""

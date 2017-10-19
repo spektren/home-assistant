@@ -29,39 +29,35 @@ COMMENT_REQUIREMENTS = (
     'blinkt',
     'smbus-cffi',
     'envirophat',
-    'i2csense',
-    'credstash'
+    'i2csense'
 )
 
 TEST_REQUIREMENTS = (
     'aioautomatic',
     'aiohttp_cors',
     'apns2',
-    'defusedxml',
     'dsmr_parser',
     'ephem',
     'evohomeclient',
-    'feedparser',
+    'forecastio',
     'fuzzywuzzy',
     'gTTS-token',
     'ha-ffmpeg',
-    'haversine',
     'hbmqtt',
     'holidays',
     'influxdb',
     'libpurecoollink',
     'libsoundtouch',
     'mficlient',
-    'paho-mqtt',
+    'nx584',
+    'paho',
     'pexpect',
     'pilight',
     'pmsensor',
     'prometheus_client',
-    'pydispatcher',
+    'pydispatch',
     'PyJWT',
     'pylitejet',
-    'pynx584',
-    'python-forecastio',
     'pyunifi',
     'pywebpush',
     'restrictedpython',
@@ -203,13 +199,11 @@ def requirements_test_output(reqs):
     output = []
     output.append('# Home Assistant test')
     output.append('\n')
-    with open('requirements_test.txt') as test_file:
-        output.append(test_file.read())
+    with open('requirements_test.txt') as fp:
+        output.append(fp.read())
     output.append('\n')
     filtered = {key: value for key, value in reqs.items()
-                if any(
-                    re.search(r'(^|#){}($|[=><])'.format(ign),
-                              key) is not None for ign in TEST_REQUIREMENTS)}
+                if any(ign in key for ign in TEST_REQUIREMENTS)}
     output.append(generate_requirements_list(filtered))
 
     return ''.join(output)

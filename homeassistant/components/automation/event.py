@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 TRIGGER_SCHEMA = vol.Schema({
     vol.Required(CONF_PLATFORM): 'event',
     vol.Required(CONF_EVENT_TYPE): cv.string,
-    vol.Optional(CONF_EVENT_DATA, default={}): dict,
+    vol.Optional(CONF_EVENT_DATA): dict,
 })
 
 
@@ -29,24 +29,18 @@ TRIGGER_SCHEMA = vol.Schema({
 def async_trigger(hass, config, action):
     """Listen for events based on configuration."""
     event_type = config.get(CONF_EVENT_TYPE)
-    event_data_schema = vol.Schema(
-        config.get(CONF_EVENT_DATA),
-        extra=vol.ALLOW_EXTRA)
+    event_data = config.get(CONF_EVENT_DATA)
 
     @callback
     def handle_event(event):
         """Listen for events and calls the action when data matches."""
-        try:
-            event_data_schema(event.data)
-        except vol.Invalid:
-            # If event data doesn't match requested schema, skip event
-            return
-
-        hass.async_run_job(action, {
-            'trigger': {
-                'platform': 'event',
-                'event': event,
-            },
-        })
+        if not event_data or all(val == event.data.get(key) for key, val
+                                 in event_data.items()):
+            hass.async_run_job(action, {
+                'trigger': {
+                    'platform': 'event',
+                    'event': event,
+                },
+            })
 
     return hass.bus.async_listen(event_type, handle_event)

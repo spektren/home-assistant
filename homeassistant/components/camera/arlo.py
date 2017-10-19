@@ -1,50 +1,30 @@
 """
-Support for Netgear Arlo IP cameras.
+This component provides basic support for Netgear Arlo IP cameras.
 
 For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/camera.arlo/
 """
 import asyncio
 import logging
-from datetime import timedelta
 
 import voluptuous as vol
 
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from homeassistant.components.arlo import DEFAULT_BRAND, DATA_ARLO
 from homeassistant.components.camera import Camera, PLATFORM_SCHEMA
 from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.const import ATTR_BATTERY_LEVEL
-from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
-
-_LOGGER = logging.getLogger(__name__)
-
-SCAN_INTERVAL = timedelta(minutes=10)
-
-ARLO_MODE_ARMED = 'armed'
-ARLO_MODE_DISARMED = 'disarmed'
-
-ATTR_BRIGHTNESS = 'brightness'
-ATTR_FLIPPED = 'flipped'
-ATTR_MIRRORED = 'mirrored'
-ATTR_MOTION = 'motion_detection_sensitivity'
-ATTR_POWERSAVE = 'power_save_mode'
-ATTR_SIGNAL_STRENGTH = 'signal_strength'
-ATTR_UNSEEN_VIDEOS = 'unseen_videos'
-
-CONF_FFMPEG_ARGUMENTS = 'ffmpeg_arguments'
 
 DEPENDENCIES = ['arlo', 'ffmpeg']
 
-POWERSAVE_MODE_MAPPING = {
-    1: 'best_battery_life',
-    2: 'optimized',
-    3: 'best_video'
-}
+_LOGGER = logging.getLogger(__name__)
+
+CONF_FFMPEG_ARGUMENTS = 'ffmpeg_arguments'
+ARLO_MODE_ARMED = 'armed'
+ARLO_MODE_DISARMED = 'disarmed'
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Optional(CONF_FFMPEG_ARGUMENTS):
-    cv.string,
+    vol.Optional(CONF_FFMPEG_ARGUMENTS): cv.string,
 })
 
 
@@ -73,7 +53,6 @@ class ArloCam(Camera):
         self._motion_status = False
         self._ffmpeg = hass.data[DATA_FFMPEG]
         self._ffmpeg_arguments = device_info.get(CONF_FFMPEG_ARGUMENTS)
-        self.attrs = {}
 
     def camera_image(self):
         """Return a still image response from the camera."""
@@ -102,27 +81,13 @@ class ArloCam(Camera):
         return self._name
 
     @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return {
-            ATTR_BATTERY_LEVEL: self.attrs.get(ATTR_BATTERY_LEVEL),
-            ATTR_BRIGHTNESS: self.attrs.get(ATTR_BRIGHTNESS),
-            ATTR_FLIPPED: self.attrs.get(ATTR_FLIPPED),
-            ATTR_MIRRORED: self.attrs.get(ATTR_MIRRORED),
-            ATTR_MOTION: self.attrs.get(ATTR_MOTION),
-            ATTR_POWERSAVE: self.attrs.get(ATTR_POWERSAVE),
-            ATTR_SIGNAL_STRENGTH: self.attrs.get(ATTR_SIGNAL_STRENGTH),
-            ATTR_UNSEEN_VIDEOS: self.attrs.get(ATTR_UNSEEN_VIDEOS),
-        }
-
-    @property
     def model(self):
-        """Return the camera model."""
+        """Camera model."""
         return self._camera.model_id
 
     @property
     def brand(self):
-        """Return the camera brand."""
+        """Camera brand."""
         return DEFAULT_BRAND
 
     @property
@@ -132,7 +97,7 @@ class ArloCam(Camera):
 
     @property
     def motion_detection_enabled(self):
-        """Return the camera motion detection status."""
+        """Camera Motion Detection Status."""
         return self._motion_status
 
     def set_base_station_mode(self, mode):
@@ -140,7 +105,7 @@ class ArloCam(Camera):
         # Get the list of base stations identified by library
         base_stations = self.hass.data[DATA_ARLO].base_stations
 
-        # Some Arlo cameras does not have base station
+        # Some Arlo cameras does not have basestation
         # So check if there is base station detected first
         # if yes, then choose the primary base station
         # Set the mode on the chosen base station
@@ -157,16 +122,3 @@ class ArloCam(Camera):
         """Disable the motion detection in base station (Disarm)."""
         self._motion_status = False
         self.set_base_station_mode(ARLO_MODE_DISARMED)
-
-    def update(self):
-        """Add an attribute-update task to the executor pool."""
-        self.attrs[ATTR_BATTERY_LEVEL] = self._camera.get_battery_level
-        self.attrs[ATTR_BRIGHTNESS] = self._camera.get_battery_level
-        self.attrs[ATTR_FLIPPED] = self._camera.get_flip_state,
-        self.attrs[ATTR_MIRRORED] = self._camera.get_mirror_state,
-        self.attrs[
-            ATTR_MOTION] = self._camera.get_motion_detection_sensitivity,
-        self.attrs[ATTR_POWERSAVE] = POWERSAVE_MODE_MAPPING[
-            self._camera.get_powersave_mode],
-        self.attrs[ATTR_SIGNAL_STRENGTH] = self._camera.get_signal_strength,
-        self.attrs[ATTR_UNSEEN_VIDEOS] = self._camera.unseen_videos

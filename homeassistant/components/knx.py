@@ -26,7 +26,6 @@ CONF_KNX_TUNNELING = "tunneling"
 CONF_KNX_LOCAL_IP = "local_ip"
 CONF_KNX_FIRE_EVENT = "fire_event"
 CONF_KNX_FIRE_EVENT_FILTER = "fire_event_filter"
-CONF_KNX_STATE_UPDATER = "state_updater"
 
 SERVICE_KNX_SEND = "send"
 SERVICE_KNX_ATTR_ADDRESS = "address"
@@ -36,7 +35,7 @@ ATTR_DISCOVER_DEVICES = 'devices'
 
 _LOGGER = logging.getLogger(__name__)
 
-REQUIREMENTS = ['xknx==0.7.16']
+REQUIREMENTS = ['xknx==0.7.13']
 
 TUNNELING_SCHEMA = vol.Schema({
     vol.Required(CONF_HOST): cv.string,
@@ -59,8 +58,7 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Inclusive(CONF_KNX_FIRE_EVENT_FILTER, 'fire_ev'):
             vol.All(
                 cv.ensure_list,
-                [cv.string]),
-        vol.Optional(CONF_KNX_STATE_UPDATER, default=True): cv.boolean,
+                [cv.string])
     })
 }, extra=vol.ALLOW_EXTRA)
 
@@ -136,7 +134,7 @@ class KNXModule(object):
         """Start KNX object. Connect to tunneling or Routing device."""
         connection_config = self.connection_config()
         yield from self.xknx.start(
-            state_updater=self.config[DOMAIN][CONF_KNX_STATE_UPDATER],
+            state_updater=True,
             connection_config=connection_config)
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.initialized = True
@@ -219,7 +217,7 @@ class KNXModule(object):
 
     @asyncio.coroutine
     def service_send_to_knx_bus(self, call):
-        """Service for sending an arbitrary KNX message to the KNX bus."""
+        """Service for sending an arbitray KNX message to the KNX bus."""
         from xknx.knx import Telegram, Address, DPTBinary, DPTArray
         attr_payload = call.data.get(SERVICE_KNX_ATTR_PAYLOAD)
         attr_address = call.data.get(SERVICE_KNX_ATTR_ADDRESS)
